@@ -11,13 +11,10 @@ END_MESSAGE_MAP()
 
 CISUser1App::CISUser1App()
 {
-	//EzDefineDialog
-	//WaitOnDialog
 }
 
 CISUser1App theApp;
 
-//UseDLL
 /*
 BOOL CISUser1App::InitInstance()
 {
