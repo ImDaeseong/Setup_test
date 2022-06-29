@@ -1,0 +1,209 @@
+#include "ifx.h"
+
+
+prototype IsVaildIP(STRING);
+prototype GetCheckIP(); 
+
+
+prototype STRING GetBrowserVersion();
+
+
+
+//설치 시작
+function OnFirstUIBefore()
+    number  nResult, nLevel, nSize, nSetupType;
+    string  szTitle, szMsg, szOpt1, szOpt2, szLicenseFile;
+    string  szName, szCompany, szTargetPath, szDir, szFeatures;
+    BOOL    bLicenseAccepted;
+    string  szIP, svVersion;
+begin	
+
+    if( REMOVEONLY ) then
+        Disable( DIALOGCACHE );
+		szMsg = SdLoadString( IDS_IFX_ERROR_PRODUCT_NOT_INSTALLED_UNINST );
+   		SdSubstituteProductInfo( szMsg );
+		MessageBox( szMsg, SEVERE );
+		abort;
+    endif;
+   
+    nSetupType = COMPLETE;	
+    szDir = TARGETDIR;
+    szName = "";
+    szCompany = "";
+    bLicenseAccepted = FALSE;
+    
+    //브라우저 버전 체크
+    svVersion = GetBrowserVersion();    
+    SprintfBox(INFORMATION, "", svVersion);
+    
+    //유효 IP 체크
+    GetCheckIP();
+    
+    
+Dlg_Start:
+    nResult = 0;
+
+Dlg_SdWelcome:
+    szTitle = "";
+    szMsg = "";
+    
+    nResult = SdWelcome( szTitle, szMsg );
+    if (nResult = BACK) goto Dlg_Start;
+    
+Dlg_SdAskDestPath2:
+    if ((nResult = BACK) && (nSetupType != CUSTOM)) goto Dlg_SdWelcome;
+	szTitle = "";
+    szMsg = "";
+    
+    szDir = TARGETDIR;	
+    nResult = SdAskDestPath2( szTitle, szMsg, szDir );    
+    
+    if (nResult = BACK) 
+         goto Dlg_Start;
+  
+Dlg_SdStartCopy2:
+    szTitle = "";
+    szMsg = "";
+    
+    nResult = SdStartCopy2( szTitle, szMsg );	
+    if (nResult = BACK) goto Dlg_SdAskDestPath2;
+
+    // Added in 11.0 - Set appropriate StatusEx static text.
+    SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_FIRSTUI ) );
+ 
+    return 0;
+end;
+
+//설치 완료
+function OnFirstUIAfter()
+    STRING szTitle, szMsg1, szMsg2, szOpt1, szOpt2;
+    NUMBER bvOpt1, bvOpt2;
+begin
+
+    ShowObjWizardPages(NEXT);
+    
+    szTitle = "";
+    szMsg1 = ""; 
+    szMsg2 = "";
+    szOpt1 = "";
+    szOpt2 = "";
+	bvOpt1   = FALSE;
+    bvOpt2   = FALSE;    
+    
+    SdFinish ( szTitle , szMsg1 , szMsg2 , szOpt1 , szOpt2 , bvOpt1 , bvOpt2 );
+end;
+
+
+
+
+
+//브라우저 버전 체크
+function STRING GetBrowserVersion()
+  int nvType,nvSize, nvVer;
+  STRING svVersion,svSubStr,szKey;
+  
+begin
+  
+    svVersion = "";
+    
+	RegDBSetDefaultRoot( HKEY_CURRENT_USER);
+	
+	//chrome
+	//szKey = "SOFTWARE" + "\\" + "Google" + "\\" + "Chrome"+ "\\" + "BLBeacon";	
+	//edge
+	szKey = "SOFTWARE" + "\\" + "Microsoft" + "\\" + "Edge"+ "\\" + "BLBeacon";
+	
+	if (RegDBGetKeyValueEx(szKey ,"Version", nvType, svVersion, nvSize) < 0) then		
+		return svVersion;
+	endif;          
+
+    //length 3 까지만 읽기
+	//StrSub (svSubStr, svVersion, 0, 3);         
+	
+	//SprintfBox(INFORMATION, "", svVersion);      
+	//SprintfBox(INFORMATION, "", svSubStr);   
+	
+	return svVersion;
+end;  
+
+
+//IP 유효 체크 
+function GetCheckIP()
+     number  nResult;
+     string  szIP;  
+begin   
+
+    //IP 정보 
+    SetDialogTitle(DLG_ASK_TEXT, "접속할 서버 IP 정보를 입력 하셔야 합니다."); 
+    nResult = AskText ("서버 IP", "127.0.0.1", szIP);
+    
+    if nResult = NEXT then
+        
+       if ( IsVaildIP(szIP) = FALSE) then
+           SprintfBox(INFORMATION, "IP 정보", "IP 정보가 유효하지 않습니다.");
+           abort;
+       else
+           SprintfBox(INFORMATION, "IP 정보", "%s", szIP);
+       endif;       
+      
+    else      
+      abort;      
+    endif;
+
+end;  
+
+
+function IsVaildIP(szInputIP)
+    NUMBER    nReturn, nvNum, nCount, i, j;
+    NUMBER    nVerNum;
+    STRING    svTemp;
+    LIST    listVer,listnVer;
+    BOOL    bRetVal, bDone;
+begin
+    
+    bRetVal = TRUE;
+    bDone = FALSE;
+    
+	if (szInputIP = "") then
+		szInputIP = "0";
+	endif;
+
+    // Tokenize versions, convert to numbers, and compare.
+    listVer = ListCreate(STRINGLIST);
+    listnVer = ListCreate(NUMBERLIST);
+
+    StrGetTokens(listVer, szInputIP, ".");
+    
+    nReturn = ListGetFirstString(listVer, svTemp);
+    
+    while nReturn != END_OF_LIST
+        StrToNum(nvNum, svTemp);
+        ListAddItem(listnVer, nvNum, AFTER);
+        nReturn = ListGetNextString(listVer, svTemp);
+    endwhile;
+
+    nCount = ListCount(listnVer);
+        
+    if (nCount = 4 ) then
+        i = 0;
+        while (bDone = FALSE && i < nCount)
+            ListSetIndex(listnVer, i);
+            ListCurrentItem(listnVer, nVerNum);
+            
+            if (nVerNum > 255 || nVerNum < 0) then
+                bRetVal = FALSE;
+                bDone = TRUE;
+            endif;
+            i = i + 1;
+        endwhile;
+    
+    else
+        bRetVal = FALSE;
+    endif;
+    
+    
+    ListDestroy(listVer);
+    ListDestroy(listnVer);
+
+    return bRetVal;
+end;
