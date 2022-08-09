@@ -1,6 +1,6 @@
 #include "ifx.h"
 
-
+//설치일 설정
 prototype SetInstallDate();
 
 
@@ -180,33 +180,38 @@ begin
 
     GetSystemInfo (DATE, nResult, sTime);
    
+    //월 
     nPos = StrFind(sTime, "-");
     if (nPos > -1) then 
-	    StrSub(sMonth, sTime, 0, nPos);	    
-	    StrSub (sTemp, sTime, nPos+1, StrLength(sTime)); 
-	endif;		
+       StrSub(sMonth, sTime, 0, nPos);	    
+       StrSub (sTemp, sTime, nPos+1, StrLength(sTime)); 
+    endif;		
 	
-	nPos = StrFind(sTemp, "-");
-	if (nPos > -1) then 	
-		StrSub (sDay, sTemp, 0, nPos);
-		StrSub (sYear, sTemp, nPos+1, StrLength(sTime));      
+    //일,년
+    nPos = StrFind(sTemp, "-");
+    if (nPos > -1) then 	
+       StrSub (sDay, sTemp, 0, nPos);
+       StrSub (sYear, sTemp, nPos+1, StrLength(sTime));      
     endif;
     
+    //월
     if (StrLength(sMonth)<2) then
-		sMonth = "0" + sMonth;
-	endif;  
-	              
-	if (StrLength(sDay)<2) then
-		sDay = "0" + sDay;
-	endif;
-	
-	sDate = sYear + "-" + sMonth + "-" + sDay; 
+       sMonth = "0" + sMonth;
+    endif;  
+	     
+    //일         
+    if (StrLength(sDay)<2) then
+       sDay = "0" + sDay;
+    endif;
+
+    //최종 설치일(년-월-일)	
+    sDate = sYear + "-" + sMonth + "-" + sDay; 
         
     //MessageBox (sDate, SEVERE);
     
     //설치일
-	RegDBSetDefaultRoot (HKEY_CURRENT_USER);		
-	RegDBSetKeyValueEx("Software\\Daeseong\\MyProject", "installDate", REGDB_STRING, sDate , -1);     
+    RegDBSetDefaultRoot (HKEY_CURRENT_USER);		
+    RegDBSetKeyValueEx("Software\\Daeseong\\MyProject", "installDate", REGDB_STRING, sDate , -1);     
 
 end;
 
