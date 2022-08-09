@@ -1,0 +1,132 @@
+#include "ifx.h"
+
+//설치 시작
+function OnFirstUIBefore()
+    number  nResult, nLevel, nSize, nSetupType;
+    string  szTitle, szMsg, szOpt1, szOpt2, szLicenseFile;
+    string  szName, szCompany, szTargetPath, szDir, szFeatures;
+    BOOL    bLicenseAccepted;
+begin	
+
+    if( REMOVEONLY ) then
+        Disable( DIALOGCACHE );
+		szMsg = SdLoadString( IDS_IFX_ERROR_PRODUCT_NOT_INSTALLED_UNINST );
+   		SdSubstituteProductInfo( szMsg );
+		MessageBox( szMsg, SEVERE );
+		abort;
+    endif;
+   
+   Enable(STATUSEX);
+	Disable(STATUSEX);  
+	
+    nSetupType = COMPLETE;	
+    szDir = TARGETDIR;//szDir = WINSYSDIR;//TARGETDIR;
+    TARGETDIR = szDir;
+    
+    szName = "";
+    szCompany = "";
+    bLicenseAccepted = FALSE;
+
+Dlg_Start:
+    nResult = 0;
+
+  
+Dlg_SdStartCopy2:
+    SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_FIRSTUI ) );    
+    Enable(STATUSEX);
+ 
+    return 0;
+end;
+
+//설치 완료
+function OnFirstUIAfter()
+    STRING szTitle, szMsg1, szMsg2, szOpt1, szOpt2;
+    NUMBER bvOpt1, bvOpt2;
+    STRING szKey, szPath, szValue;
+begin
+
+    ShowObjWizardPages(NEXT);    
+    
+    
+    //mycleint.exe 실행 경로
+    RegDBSetDefaultRoot (HKEY_CURRENT_USER);
+    szPath = "\\Software\\MyProject\\runfile";
+    szKey = "path";
+    szValue = TARGETDIR ^ "mycleint.exe";
+    RegDBSetKeyValueEx(szPath, szKey, REGDB_STRING, szValue , -1);
+           
+        
+    Disable(STATUSEX);
+    ShowObjWizardPages(NEXT);     
+    
+    bvOpt1  = FALSE; 
+    bvOpt2  = FALSE; 
+    szMsg1 = SdLoadString(IFX_SDFINISH_MSG1); 
+    SdFinishEx(szTitle, szMsg1, szMsg2, szOpt1, szOpt2,bvOpt1, bvOpt2);     
+end;
+
+
+//삭제 시작
+function OnMaintUIBefore()
+    number	nResult, nType;
+    string	szTitle, szMsg;    
+    STRING szKey, szValue;    
+begin
+	
+	nType = MODIFY;
+    OnSQLServerInitializeMaint();
+
+Dlg_Start:
+
+     if( !REMOVEONLY ) then
+        Disable( BACKBUTTON );
+	    nType = REMOVEALL;//nType = SdWelcomeMaint( szTitle, szMsg, nType );
+	    Enable( BACKBUTTON );
+        nResult = NEXT;
+    else
+        Disable( DIALOGCACHE );
+        nType = REMOVEALL;
+    endif;
+
+Dlg_ObjDialogs:
+    
+    //mycleint.exe 실행 경로 삭제
+	RegDBSetDefaultRoot (HKEY_CURRENT_USER);
+	szKey = "path";
+	szValue = "\\Software\\MyProject\\runfile";
+	RegDBDeleteValue (szKey, szValue);			
+
+	// Ensure that all previously installed features are removed.
+	FeatureRemoveAllInMediaAndLog();
+
+    // Added in 11.0 - Set appropriate StatusEx static text.
+    SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_MAINTUI_REMOVEALL ) );
+ 
+end;
+
+//삭제 완료
+function OnMaintUIAfter()
+    STRING szTitle, szMsg1, szMsg2, szOpt1, szOpt2;
+    NUMBER bvOpt1, bvOpt2;
+begin
+
+    ShowObjWizardPages(NEXT);
+    
+    if( REMOVEALLMODE ) then
+        szTitle = SdLoadString(IFX_SDFINISH_REMOVE_TITLE);
+        szMsg1 = SdLoadString(IFX_SDFINISH_REMOVE_MSG1);
+    else
+        szTitle = SdLoadString(IFX_SDFINISH_MAINT_TITLE);    
+        szMsg1  = SdLoadString(IFX_SDFINISH_MAINT_MSG1);
+    endif;
+
+	szMsg2 = "";    
+    szOpt1 = "";
+    szOpt2 = "";
+	bvOpt1   = FALSE;
+    bvOpt2   = FALSE;    
+
+    szTitle   = "mycleint 제거 완료";      
+    Sleep(500);
+    SdFinish ( szTitle , szMsg1 , szMsg2 , szOpt1 , szOpt2 , bvOpt1 , bvOpt2 );
+end;

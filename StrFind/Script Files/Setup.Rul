@@ -1,0 +1,169 @@
+#include "ifx.h"
+
+//설치 시작
+function OnFirstUIBefore()
+    number  nResult, nLevel, nSize, nSetupType;
+    string  szTitle, szMsg, szOpt1, szOpt2, szLicenseFile;
+    string  szName, szCompany, szTargetPath, szDir, szFeatures;
+    BOOL    bLicenseAccepted;
+    number  nindex, nMsgBoxResult;
+    string  szAlertMsg;
+begin	
+
+    if( REMOVEONLY ) then
+        Disable( DIALOGCACHE );
+        szMsg = SdLoadString( IDS_IFX_ERROR_PRODUCT_NOT_INSTALLED_UNINST );
+        SdSubstituteProductInfo( szMsg );
+        MessageBox( szMsg, SEVERE );
+        abort;
+    endif;
+   
+    nSetupType = COMPLETE;	
+    
+    szDir = PROGRAMFILES^"MyProject";	
+    TARGETDIR = szDir;
+    
+    szName = "";
+    szCompany = "";
+    bLicenseAccepted = FALSE;
+
+Dlg_Start:
+    nResult = 0;
+
+Dlg_SdWelcome:
+    szTitle = "";
+    szMsg = "";
+    
+    nResult = SdWelcome( szTitle, szMsg );
+    if (nResult = BACK) goto Dlg_Start;
+
+Dlg_SdLicense2:
+    szTitle = "";
+    szOpt1 = "";
+    szOpt2 = "";
+    
+    szLicenseFile = SUPPORTDIR ^ "License.rtf";
+
+    // Dlg_SdLicense2 미체크이므로 바로 Dlg_SdRegisterUser 넘어간다   
+    //nResult = SdLicense2Ex( szTitle, szOpt1, szOpt2, szLicenseFile, bLicenseAccepted, TRUE );
+    if (nResult = BACK) then
+        goto Dlg_SdWelcome;
+    else
+        bLicenseAccepted = TRUE;
+    endif;
+    
+
+Dlg_SdRegisterUser:
+    szMsg = "";
+    szTitle = "";
+    
+    // Dlg_SdRegisterUser 미체크 바로 Dlg_SetupType2 넘어간다
+    //nResult = SdRegisterUser( szTitle, szMsg, szName, szCompany );
+    if (nResult = BACK) goto Dlg_SdLicense2;
+
+Dlg_SetupType2:   
+    szTitle = "";
+    szMsg = "";
+    nResult = CUSTOM;
+    
+    // Dlg_SetupType2 미체크 바로 Dlg_SdAskDestPath2 넘어간다
+    //nResult = SetupType2( szTitle, szMsg, "", nSetupType, 0 );
+    
+    if (nResult = BACK) then
+        goto Dlg_SdRegisterUser;
+    else
+        nSetupType = nResult;
+        if (nSetupType != CUSTOM) then
+            szTargetPath = TARGETDIR;
+            nSize = 0;
+            FeatureCompareSizeRequired( MEDIA, szTargetPath, nSize );
+            if (nSize != 0) then      
+                MessageBox( szSdStr_NotEnoughSpace, WARNING );
+                goto Dlg_SetupType2;
+            endif;
+        endif;   
+    endif;
+
+Dlg_SdAskDestPath2:
+    if ((nResult = BACK) && (nSetupType != CUSTOM)) goto Dlg_SetupType2;
+	szTitle = "";
+    szMsg = "";
+    
+    szDir = TARGETDIR;	
+    nResult = SdAskDestPath2( szTitle, szMsg, szDir );    
+    
+    if (nResult = BACK) 
+         goto Dlg_SdWelcome;
+	
+    //설치 경로 변경시 폴더명이 없어지므로 체크  	
+    nindex = StrFind( szDir, "MyProject");	
+    if( nindex < 0) then
+       TARGETDIR = szDir ^"MyProject";       
+    else
+       TARGETDIR = szDir;   
+    endif;	    
+  
+Dlg_SdStartCopy2:
+    szTitle = "MyProject 설치";
+    szMsg = "MyProject 설치 파일을 복사합니다.";
+    
+    //설치 드라이브 체크
+    nindex = StrFind(TARGETDIR, "c:\\");
+    if(nindex == 0) then
+        szAlertMsg = "시스템 드라이브에 설치 시 \r\n용량이 부족할수 있습니다.\r\n\r\n" + TARGETDIR + "에 설치 하시겠습니까?";
+        nMsgBoxResult = MessageBox(szAlertMsg, MB_OKCANCEL|MB_ICONINFORMATION);
+        if(nMsgBoxResult != IDOK) then
+	goto Dlg_SdAskDestPath2;
+        endif;
+    endif;
+        
+    //nResult = SdStartCopy2( szTitle, szMsg );	
+    if (nResult = BACK) goto Dlg_Start;
+
+    // Added in 11.0 - Set appropriate StatusEx static text.
+    //SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_FIRSTUI ) );
+ 
+    SetStatusWindow( 0, "" );
+    Enable( STATUSEX );
+    StatusUpdate( ON, 100 );
+    
+    return 0;
+end;
+
+//설치 완료
+function OnFirstUIAfter()
+    STRING szTitle, szMsg1, szMsg2, szOpt1, szOpt2;
+    NUMBER bvOpt1, bvOpt2;
+    NUMBER nReserved, nOption; 
+begin
+
+    ShowObjWizardPages(NEXT);
+    
+    szTitle = "";
+    szMsg1 = ""; 
+    szMsg2 = "";
+    szOpt1 = "";
+    szOpt2 = "";
+	bvOpt1   = FALSE;
+    bvOpt2   = FALSE;    
+
+    
+    Disable (BACKBUTTON);  
+
+
+    //설치 완료시 레지스트리 및 환경 설정 
+        
+    
+    Disable( STATUSEX );
+
+    ShowObjWizardPages( NEXT );  
+  
+    //SdFinish ( szTitle , szMsg1 , szMsg2 , szOpt1 , szOpt2 , bvOpt1 , bvOpt2 );
+	
+    szTitle   = "MyProject 설치 완료"; 
+    if (SdFinishReboot (szTitle, szMsg1, nOption, szMsg2, nReserved) < 0) then 
+          MessageBox ("SdFinishReboot failed.", SEVERE); 
+    endif; 
+	
+	
+end;

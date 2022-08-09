@@ -1,0 +1,135 @@
+#include "ifx.h"
+
+prototype cdecl BOOL EzFun.ConnectWebPage(STRING);
+prototype cdecl BOOL EzFun.ShellExecuteUrl(STRING);
+
+prototype GetUseDLL();
+
+//설치 시작
+function OnFirstUIBefore()
+    number  nResult, nLevel, nSize, nSetupType;
+    string  szTitle, szMsg, szOpt1, szOpt2, szLicenseFile;
+    string  szName, szCompany, szTargetPath, szDir, szFeatures;
+    BOOL    bLicenseAccepted;
+begin	
+
+    if( REMOVEONLY ) then
+        Disable( DIALOGCACHE );
+		szMsg = SdLoadString( IDS_IFX_ERROR_PRODUCT_NOT_INSTALLED_UNINST );
+   		SdSubstituteProductInfo( szMsg );
+		MessageBox( szMsg, SEVERE );
+		abort;
+    endif;
+    
+    
+    GetUseDLL();
+				 
+   
+    nSetupType = COMPLETE;	
+    
+    szDir = PROGRAMFILES^"MyProject";	
+    TARGETDIR = szDir;
+    
+    szName = "";
+    szCompany = "";
+    bLicenseAccepted = FALSE;
+
+Dlg_Start:
+    nResult = 0;
+
+Dlg_SdWelcome:
+    szTitle = "";
+    szMsg = "";
+    
+    nResult = SdWelcome( szTitle, szMsg );
+    if (nResult = BACK) goto Dlg_Start;
+
+
+Dlg_SdAskDestPath2:
+    if ((nResult = BACK) && (nSetupType != CUSTOM)) goto Dlg_SdWelcome;
+	szTitle = "";
+    szMsg = "";
+    
+    szDir = TARGETDIR;	
+    nResult = SdAskDestPath2( szTitle, szMsg, szDir );   
+    
+    if (nResult = BACK) goto Dlg_SdWelcome;
+
+  
+Dlg_SdStartCopy2:
+    szTitle = "";
+    szMsg = "";
+    
+
+    // Added in 11.0 - Set appropriate StatusEx static text.
+    SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_FIRSTUI ) );
+ 
+    return 0;
+end;
+
+
+//설치 완료
+function OnFirstUIAfter()
+    STRING szTitle, szMsg1, szMsg2, szOpt1, szOpt2;
+    NUMBER bvOpt1, bvOpt2;
+    NUMBER nReserved, nOption; 
+begin
+
+    ShowObjWizardPages(NEXT);
+    
+    szTitle = "";
+    szMsg1 = ""; 
+    szMsg2 = "";
+    szOpt1 = "";
+    szOpt2 = "";
+	bvOpt1   = FALSE;
+    bvOpt2   = FALSE;    
+
+    
+    Disable (BACKBUTTON);  
+
+
+    //설치 완료시 레지스트리 및 환경 설정 
+        
+    
+    Disable( STATUSEX );
+
+    ShowObjWizardPages( NEXT );  
+  
+    //SdFinish ( szTitle , szMsg1 , szMsg2 , szOpt1 , szOpt2 , bvOpt1 , bvOpt2 );
+	
+    szTitle   = "MyProject 설치 완료"; 
+    if (SdFinishReboot (szTitle, szMsg1, nOption, szMsg2, nReserved) < 0) then 
+          MessageBox ("SdFinishReboot failed.", SEVERE); 
+    endif; 
+		
+end;
+
+
+function GetUseDLL()
+    int     nDLLResult;
+    string  szDllPath;
+begin   
+
+    //DLL 로드
+    szDllPath = SUPPORTDIR ^ "EzFun.dll";
+	nDLLResult = UseDLL(szDllPath);
+	
+	if (UseDLL(szDllPath) < 0) then
+		MessageBox ("DLL을 로드 할 수 없습니다.", SEVERE); 
+		abort;
+	endif;
+    
+    //사이트 호출   
+    ShellExecuteUrl("https://www.naver.com/");
+    
+    //사이트 방문
+    ConnectWebPage("https://www.naver.com/");   
+    
+    
+    // DLL 해제 	
+	if (nDLLResult == 0) then
+		UnUseDLL(szDllPath);
+	endif; 
+
+end;  
