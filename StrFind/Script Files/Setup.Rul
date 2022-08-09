@@ -1,5 +1,9 @@
 #include "ifx.h"
 
+
+prototype SetInstallDate();
+
+
 //설치 시작
 function OnFirstUIBefore()
     number  nResult, nLevel, nSize, nSetupType;
@@ -152,7 +156,7 @@ begin
 
 
     //설치 완료시 레지스트리 및 환경 설정 
-        
+    SetInstallDate();    
     
     Disable( STATUSEX );
 
@@ -167,3 +171,42 @@ begin
 	
 	
 end;
+
+
+function SetInstallDate()
+    number nResult, nPos;
+    STRING sTime, sMonth, sDay, sYear, sTemp, sDate;
+begin
+
+    GetSystemInfo (DATE, nResult, sTime);
+   
+    nPos = StrFind(sTime, "-");
+    if (nPos > -1) then 
+	    StrSub(sMonth, sTime, 0, nPos);	    
+	    StrSub (sTemp, sTime, nPos+1, StrLength(sTime)); 
+	endif;		
+	
+	nPos = StrFind(sTemp, "-");
+	if (nPos > -1) then 	
+		StrSub (sDay, sTemp, 0, nPos);
+		StrSub (sYear, sTemp, nPos+1, StrLength(sTime));      
+    endif;
+    
+    if (StrLength(sMonth)<2) then
+		sMonth = "0" + sMonth;
+	endif;  
+	              
+	if (StrLength(sDay)<2) then
+		sDay = "0" + sDay;
+	endif;
+	
+	sDate = sYear + "-" + sMonth + "-" + sDay; 
+        
+    //MessageBox (sDate, SEVERE);
+    
+    //설치일
+	RegDBSetDefaultRoot (HKEY_CURRENT_USER);		
+	RegDBSetKeyValueEx("Software\\Daeseong\\MyProject", "installDate", REGDB_STRING, sDate , -1);     
+
+end;
+
