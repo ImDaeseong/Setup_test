@@ -428,7 +428,6 @@
 		<row><td>ISProjectDataFolder</td><td>1</td><td/><td>1</td></row>
 		<row><td>ISProjectFolder</td><td/><td/><td>1</td></row>
 		<row><td>New Path Variable</td><td>F:</td><td/><td>2</td></row>
-		<row><td>PATH_TO_DESKTOP_FILES</td><td>C:\Users\Mediaweb\Desktop</td><td/><td>2</td></row>
 		<row><td>ProgramFilesFolder</td><td/><td/><td>1</td></row>
 		<row><td>SystemFolder</td><td/><td/><td>1</td></row>
 		<row><td>WindowsFolder</td><td/><td/><td>1</td></row>
