@@ -1,0 +1,198 @@
+#include "ifx.h"
+
+#define PATH_DRIVE     0
+#define PATH_PATH      1
+#define PATH_FILENAME  2
+#define PATH_EXT       3
+
+// ───── [설치 시작] ─────
+function OnFirstUIBefore()
+    number  nResult, nLevel, nSize, nSetupType;
+    string  szTitle, szMsg, szOpt1, szOpt2, szLicenseFile;
+    string  szName, szCompany, szTargetPath, szDir, szFeatures;
+    BOOL    bLicenseAccepted;
+    STRING  szDrive, szPath, szFileName, szExt, szTrimmedPath, szLastChar;
+    NUMBER  nindex;
+begin	
+
+    if( REMOVEONLY ) then
+        Disable( DIALOGCACHE );
+		szMsg = SdLoadString( IDS_IFX_ERROR_PRODUCT_NOT_INSTALLED_UNINST );
+   		SdSubstituteProductInfo( szMsg );
+		MessageBox( szMsg, SEVERE );
+		abort;
+    endif;
+   
+    Enable(STATUSEX);
+	Disable(STATUSEX);  
+	
+    nSetupType = COMPLETE;	
+        
+    // 시스템 드라이브 문자 가져오기
+    nResult = GetEnvVar("SystemDrive", szDrive);
+    if (nResult < 0) then
+        ParsePath(szDrive, TARGETDIR, PATH_DRIVE);
+    endif;
+
+    szDir = szDrive ^ "\\Myunzip\\exe";
+    TARGETDIR = szDir;
+    
+    szName = "";
+    szCompany = "";
+    bLicenseAccepted = FALSE;
+
+Dlg_Start:
+    nResult = 0;
+
+Dlg_SdAskDestPath2:
+
+    if ((nResult = BACK) && (nSetupType != CUSTOM)) goto Dlg_Start;
+	
+	szTitle = "";
+    szMsg = "";
+    
+    szDir = TARGETDIR;
+    nResult = SdAskDestPath2(szTitle, szMsg, szDir);
+    if (nResult = BACK) goto Dlg_Start;
+
+    // 드라이브 문자 추출
+    ParsePath(szDrive, szDir, PATH_DRIVE);
+   
+    // 드라이브 문자가 없으면 시스템 드라이브
+    if (StrLength(szDrive) < 2) then
+        
+        nResult = GetEnvVar("SystemDrive", szDrive);
+		if (nResult < 0) then
+			ParsePath(szDrive, TARGETDIR, PATH_DRIVE);
+		endif;
+    
+    endif;
+        
+    TARGETDIR = szDrive ^ "\\Myunzip\\exe";
+
+Dlg_SdStartCopy2:
+    
+    SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_FIRSTUI ) );    
+    Enable(STATUSEX);
+    
+    return 0;
+end;
+
+
+// ───── [설치 완료] ─────
+function OnFirstUIAfter()
+    STRING szTitle, szMsg1, szMsg2, szOpt1, szOpt2;
+    NUMBER bvOpt1, bvOpt2;
+    NUMBER nReserved, nOption, nResult; 
+    STRING szZipPath1, szZipPath2, szDestPath1, szDestPath2, szCmdLine1, szCmdLine2;
+begin
+    ShowObjWizardPages(NEXT);
+
+    szTitle = "";
+    szMsg1 = "";
+    szMsg2 = "";
+    szOpt1 = "";
+    szOpt2 = "";
+    bvOpt1 = FALSE;
+    bvOpt2 = FALSE;
+
+    Disable (BACKBUTTON);      
+    
+    //설치시 필요 항목 복사    
+    SdShowMsg ("설치 준비 중 입니다.", TRUE);
+       
+    szZipPath1   = SUPPORTDIR ^ "mariadb.zip";
+    szZipPath2   = SUPPORTDIR ^ "7-Zip.zip";  
+    szDestPath1  = TARGETDIR ^ "mariadb";
+    szDestPath2  = TARGETDIR ^ "7-Zip";                  
+    
+    szCmdLine1 = "\"" + SUPPORTDIR ^ "unzip.exe\" \"" + szZipPath1 + "\" \"" + szDestPath1 + "\"";
+    szCmdLine2 = "\"" + SUPPORTDIR ^ "unzip.exe\" \"" + szZipPath2 + "\" \"" + szDestPath2 + "\"";
+
+
+    // 첫 번째 압축 해제 (CMD 창 숨김)
+    nResult = LaunchAppAndWait(szCmdLine1, "", LAAW_OPTION_HIDDEN);
+    if (nResult < 0) then
+        //MessageBox("첫 번째 압축 해제 중 오류 발생", SEVERE);
+    endif;
+
+    // 두 번째 압축 해제 (CMD 창 숨김)
+    nResult = LaunchAppAndWait(szCmdLine2, "", LAAW_OPTION_HIDDEN);
+    if (nResult < 0) then
+        //MessageBox("두 번째 압축 해제 중 오류 발생", SEVERE);
+    endif;
+        
+    SdShowMsg ("", FALSE);  
+    
+    Disable( STATUSEX );
+    ShowObjWizardPages( NEXT );  
+  
+    szTitle   = "설치 완료"; 
+	if (SdFinishReboot (szTitle, szMsg1, nOption, szMsg2, nReserved) < 0) then 
+		MessageBox ("SdFinishReboot failed.", SEVERE); 
+	endif; 
+
+end;
+
+
+// ───── [삭제 시작] ─────
+function OnMaintUIBefore()
+    NUMBER nResult, nType;
+    STRING szTitle, szMsg;
+    
+begin
+    nType = MODIFY;
+    OnSQLServerInitializeMaint();
+
+Dlg_Start:
+
+    if( !REMOVEONLY ) then
+        Disable( BACKBUTTON );
+	    nType = REMOVEALL;
+	    Enable( BACKBUTTON );
+        nResult = NEXT;
+    else
+        Disable( DIALOGCACHE );
+        nType = REMOVEALL;
+    endif;
+    
+
+Dlg_ObjDialogs:
+   
+    //삭제시 레지스트리, 서비스 정보 삭제
+    // 
+            
+	FeatureRemoveAllInMediaAndLog();
+
+    SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_MAINTUI_REMOVEALL ) );
+end;
+
+
+// ───── [삭제 완료] ─────
+function OnMaintUIAfter()
+    STRING szTitle, szMsg1, szMsg2, szOpt1, szOpt2;
+    NUMBER bvOpt1, bvOpt2;
+begin
+
+    ShowObjWizardPages(NEXT);
+
+    if (REMOVEALLMODE) then
+        szTitle = SdLoadString(IFX_SDFINISH_REMOVE_TITLE);
+        szMsg1 = SdLoadString(IFX_SDFINISH_REMOVE_MSG1);
+    else
+        szTitle = SdLoadString(IFX_SDFINISH_MAINT_TITLE);
+        szMsg1 = SdLoadString(IFX_SDFINISH_MAINT_MSG1);
+    endif;
+
+    szMsg2 = "";
+    szOpt1 = "";
+    szOpt2 = "";
+    bvOpt1 = FALSE;
+    bvOpt2 = FALSE;
+
+    szTitle   = "나의프로젝트 제거 완료";      
+    Sleep(500);
+    SdFinish ( szTitle , szMsg1 , szMsg2 , szOpt1 , szOpt2 , bvOpt1 , bvOpt2 );
+    
+end;
+
