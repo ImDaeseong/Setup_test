@@ -1,0 +1,1 @@
+go build -o create_ini.exe ini.go
