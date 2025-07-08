@@ -25,13 +25,13 @@ func main() {
 		`[mysqld]
 basedir=%s
 datadir=%s
-port=23306
+port=3306
 innodb_buffer_pool_size=2048M
 character-set-server=utf8mb4
 collation-server=utf8mb4_general_ci
 
 [client]
-port=23306
+port=3306
 plugin-dir=%s
 `, basedir, datadir, plugindir)
 
