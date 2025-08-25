@@ -1,0 +1,134 @@
+#include "ifx.h"
+
+#define IDD_MAINDLG    101
+#define IDC_RADIO1     1001
+#define IDC_RADIO2     1002
+#define IDC_BUTTON1    1003
+#define IDC_BUTTON2    1004
+
+
+prototype NUMBER ShowCheckBoxDialog(HWND);
+
+prototype NUMBER ShowOptionDialog();
+prototype showMessage();
+
+NUMBER nSelectType; 
+
+
+
+//설치 시작
+function OnFirstUIBefore()
+    number  nResult, nLevel, nSize, nSetupType;
+    string  szTitle, szMsg, szOpt1, szOpt2, szLicenseFile;
+    string  szName, szCompany, szTargetPath, szDir, szFeatures;
+    BOOL    bLicenseAccepted;
+begin	
+
+    if( REMOVEONLY ) then
+        Disable( DIALOGCACHE );
+		szMsg = SdLoadString( IDS_IFX_ERROR_PRODUCT_NOT_INSTALLED_UNINST );
+   		SdSubstituteProductInfo( szMsg );
+		MessageBox( szMsg, SEVERE );
+		abort;
+    endif;
+    
+    //선택창
+    nSelectType = ShowOptionDialog();
+    if nSelectType = -1 then
+        abort;    
+    endif; 
+
+    //선택옵션 확인
+    showMessage();
+  
+   
+    nSetupType = COMPLETE;	
+    
+    szDir = TARGETDIR;
+    szName = "";
+    szCompany = "";
+    bLicenseAccepted = FALSE;
+
+Dlg_Start:
+    nResult = 0;
+
+Dlg_SdAskDestPath2:
+    if ((nResult = BACK) && (nSetupType != CUSTOM)) goto Dlg_Start;
+	szTitle = "";
+    szMsg = "";
+    if (nSetupType = CUSTOM) then
+        TARGETDIR = szDir;
+    endif;
+    if (nResult = BACK) goto Dlg_Start;
+
+  
+Dlg_SdStartCopy2:
+    szTitle = "";
+    szMsg = "";
+    
+    nResult = SdStartCopy2( szTitle, szMsg );	
+    if (nResult = BACK) goto Dlg_SdAskDestPath2;
+
+    SetStatusExStaticText( SdLoadString( IDS_IFX_STATUSEX_STATICTEXT_FIRSTUI ) );
+ 
+    return 0;
+end;
+
+
+function ShowOptionDialog()
+    STRING szDialogName;
+    NUMBER nCmdValue, nCheckValue;
+    BOOL bDone, bCancel;
+begin
+    szDialogName = "옵션 선택";
+
+    if (EzDefineDialog(szDialogName, SUPPORTDIR ^ "ISUser3.dll", "", IDD_MAINDLG) < 0) then
+        MessageBox("Dialog 정의 실패", SEVERE);
+        abort;
+    endif;
+
+    bDone = FALSE;
+    bCancel = FALSE;
+
+    repeat
+        nCmdValue = WaitOnDialog(szDialogName);
+
+        switch(nCmdValue)
+            case DLG_INIT:
+                //라디오 버튼 초기 상태 설정
+                CtrlSetState(szDialogName, IDC_RADIO1, BUTTON_CHECKED);
+                CtrlSetState(szDialogName, IDC_RADIO2, BUTTON_UNCHECKED);
+
+            case IDC_BUTTON1: //OK 버튼
+                bDone = TRUE;
+
+            case IDC_BUTTON2: //Cancel 버튼
+                nCheckValue = -1;
+                bDone = TRUE;
+                bCancel = TRUE;
+        endswitch;
+    until bDone;
+
+    if (!bCancel) then
+        if (CtrlGetState(szDialogName, IDC_RADIO1) = BUTTON_CHECKED) then
+            nCheckValue = 1;
+        elseif (CtrlGetState(szDialogName, IDC_RADIO2) = BUTTON_CHECKED) then
+            nCheckValue = 2;
+        else
+            nCheckValue = -1;
+        endif;
+    endif;
+
+    EndDialog(szDialogName);
+    ReleaseDialog(szDialogName);
+
+    return nCheckValue;
+end;
+
+
+function showMessage()
+    STRING sMsg;
+begin
+   Sprintf(sMsg, "선택 타입: %d", nSelectType);
+   MessageBox(sMsg, SEVERE);
+end;
