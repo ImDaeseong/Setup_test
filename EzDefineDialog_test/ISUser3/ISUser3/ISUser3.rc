@@ -107,44 +107,25 @@ END
 // Dialog
 //
 
-IDD_MAINDLG DIALOGEX 0, 0, 316, 182
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_SYSMENU
+IDD_DIALOG DIALOGEX 0, 0, 375, 198
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION
+CAPTION "선택창"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    PUSHBUTTON      "확인",IDC_BUTTON1,78,137,50,14
-    PUSHBUTTON      "취소",IDC_BUTTON2,167,137,50,14
-    CONTROL         "1선택",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,87,42,35,10
-    CONTROL         "2선택",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,84,65,35,10
+    CONTROL         1006,IDC_STATIC,"Static",SS_BITMAP,0,0,375,49
+    CONTROL         "Radio1",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,32,73,186,20
+    CONTROL         "Radio2",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,32,108,186,20
+    PUSHBUTTON      "Button1",IDC_BUTTON1,120,163,110,24
+    PUSHBUTTON      "Button2",IDC_BUTTON2,305,163,59,24
 END
 
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// DESIGNINFO
+// Bitmap
 //
 
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
-BEGIN
-    IDD_MAINDLG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 309
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 175
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// PNG
-//
-
-IDB_BG                  PNG                     "res\\bg.png"
-IDB_CHK_ON              PNG                     "res\\check_on.png"
-IDB_CHK_OFF             PNG                     "res\\check_off.png"
+IDB_BITMAP1             BITMAP                  "res\\setuptop.bmp"
 #endif    // 한국어 resources
 /////////////////////////////////////////////////////////////////////////////
 

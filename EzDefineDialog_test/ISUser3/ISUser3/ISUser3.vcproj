@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="ISUser3"
-	ProjectGUID="{69B15ED9-B4E3-4679-84AB-9EA3F1D58ADA}"
+	ProjectGUID="{39640B5C-2FD4-4C2C-A25D-53C0098B1CCB}"
 	RootNamespace="ISUser3"
 	Keyword="MFCDLLProj"
 	TargetFrameworkVersion="196613"
@@ -241,23 +241,15 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\res\bg.png"
-				>
-			</File>
-			<File
-				RelativePath=".\res\check_off.png"
-				>
-			</File>
-			<File
-				RelativePath=".\res\check_on.png"
-				>
-			</File>
-			<File
 				RelativePath=".\ISUser3.rc"
 				>
 			</File>
 			<File
 				RelativePath=".\res\ISUser3.rc2"
+				>
+			</File>
+			<File
+				RelativePath=".\res\setuptop.bmp"
 				>
 			</File>
 		</Filter>

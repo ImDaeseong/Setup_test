@@ -1,19 +1,17 @@
 #include "ifx.h"
 
-#define IDD_MAINDLG    101
-#define IDC_RADIO1     1001
-#define IDC_RADIO2     1002
-#define IDC_BUTTON1    1003
-#define IDC_BUTTON2    1004
-
-
-prototype NUMBER ShowCheckBoxDialog(HWND);
+#define IDD_DIALOG     1001
+#define IDC_RADIO1     1002
+#define IDC_RADIO2     1003
+#define IDC_BUTTON1    1004
+#define IDC_BUTTON2    1005
 
 prototype NUMBER ShowOptionDialog();
+
+
 prototype showMessage();
 
 NUMBER nSelectType; 
-
 
 
 //설치 시작
@@ -32,11 +30,13 @@ begin
 		abort;
     endif;
     
-    //선택창
-    nSelectType = ShowOptionDialog();
+    //사용자 선택 상자
+    nSelectType = ShowOptionDialog(); 
     if nSelectType = -1 then
-        abort;    
-    endif; 
+        MessageBox("설치가 취소되었습니다.", SEVERE);
+        abort;
+    endif;  
+       
 
     //선택옵션 확인
     showMessage();
@@ -82,7 +82,7 @@ function ShowOptionDialog()
 begin
     szDialogName = "옵션 선택";
 
-    if (EzDefineDialog(szDialogName, SUPPORTDIR ^ "ISUser3.dll", "", IDD_MAINDLG) < 0) then
+    if (EzDefineDialog(szDialogName, SUPPORTDIR ^ "ISUser3.dll", "", IDD_DIALOG) < 0) then
         MessageBox("Dialog 정의 실패", SEVERE);
         abort;
     endif;

@@ -1,9 +1,18 @@
 #pragma once
 
-#ifdef ISUSER3_EXPORTS
-#define ISUSER3_API __declspec(dllexport)
-#else
-#define ISUSER3_API __declspec(dllimport)
+#ifndef __AFXWIN_H__
+	#error "PCH에 대해 이 파일을 포함하기 전에 'stdafx.h'를 포함합니다."
 #endif
 
-extern "C" ISUSER3_API int __stdcall ShowCheckBoxDialog(HWND hParent);
+#include "resource.h"		// 주 기호입니다.
+
+class CISUser3App : public CWinApp
+{
+public:
+	CISUser3App();
+
+public:
+	virtual BOOL InitInstance();
+
+	DECLARE_MESSAGE_MAP()
+};
